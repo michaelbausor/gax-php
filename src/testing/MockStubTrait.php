@@ -29,63 +29,38 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-
 namespace Google\GAX\Testing;
 
-class MockStub
+trait MockStubTrait
 {
-    // invariant: count($responseSequence) >= 1
-    private $responseSequence;
+    private $receivedFuncCalls = [];
+    private $responses = [];
 
-    public $actualCalls;
-
-    private function __construct()
+    public function _simpleRequest($method,
+                                   $argument,
+                                   $deserialize,
+                                   $metadata = [],
+                                   $options = [])
     {
-        $this->actualCalls = [];
+        $this->receivedFuncCalls[] = [$method, $argument::deserialize($argument->serialize())];
+        $response = array_shift($this->responses);
+        return new MockUnaryCall($response, $deserialize);
     }
 
-    public static function create($responseObject)
+    public function addResponse($response)
     {
-        $stub = new MockStub();
-        $status = new MockStatus(\Grpc\STATUS_OK, '');
-        $stub->responseSequence = [[$responseObject, $status]];
-        return $stub;
+        $this->responses[] = $response->serialize();
     }
 
-    /**
-     * Creates a sequence such that the responses are returned in order,
-     * and once there is only one left, it is repeated indefinitely.
-     */
-    public static function createWithResponseSequence($sequence)
+    public function getReceivedCalls()
     {
-        if (count($sequence) == 0) {
-            throw new \InvalidArgumentException("createResponseSequence: need at least 1 response");
-        }
-        $stub = new MockStub();
-        $stub->responseSequence = $sequence;
-        return $stub;
+        return $this->receivedFuncCalls;
     }
 
-    public function __call($name, $arguments)
+    public function isExhausted()
     {
-        $newArgs = array_merge([$name], $arguments);
-        return call_user_func_array(array($this, 'handleCall'), $newArgs);
-    }
-
-    private function handleCall($funcName, $request, $metadata = array(), $options = array())
-    {
-        $actualCall = [
-            'funcName' => $funcName,
-            'request' => $request,
-            'metadata' => $metadata,
-            'options' => $options,
-        ];
-        array_push($this->actualCalls, $actualCall);
-        if (count($this->responseSequence) == 1) {
-            return new MockUnaryCall($this->responseSequence[0]);
-        } else {
-            $response = array_shift($this->responseSequence);
-            return new MockUnaryCall($response);
-        }
+        return count($this->expectedFuncCalls) === 0
+            && count($this->expectedParamsArray) === 0
+            && count($this->responses) === 0;
     }
 }
