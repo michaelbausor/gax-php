@@ -54,7 +54,9 @@ trait MockStubTrait
 
     public function getReceivedCalls()
     {
-        return $this->receivedFuncCalls;
+        $x = $this->receivedFuncCalls;
+        $this->receivedFuncCalls = [];
+        return $x;
     }
 
     public function isExhausted()
