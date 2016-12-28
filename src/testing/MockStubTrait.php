@@ -59,8 +59,7 @@ trait MockStubTrait
 
     public function isExhausted()
     {
-        return count($this->expectedFuncCalls) === 0
-            && count($this->expectedParamsArray) === 0
+        return count($this->receivedFuncCalls) === 0
             && count($this->responses) === 0;
     }
 }
