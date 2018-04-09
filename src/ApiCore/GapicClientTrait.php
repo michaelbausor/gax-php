@@ -88,6 +88,17 @@ trait GapicClientTrait
         return self::$gapicVersion;
     }
 
+    private static function getClientDefaults()
+    {
+        return [];
+    }
+
+    public static function buildGrpcTransport(array $options)
+    {
+        $options += self::getClientDefaults();
+
+    }
+
     /**
      * Configures the GAPIC client based on an array of options.
      *
