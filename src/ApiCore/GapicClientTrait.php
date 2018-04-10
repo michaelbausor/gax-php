@@ -255,18 +255,30 @@ trait GapicClientTrait
             return;
         }
 
-        $authWrapperOptions = $this->subsetArray([
-            'keyFile',
-            'keyFilePath',
-            'authCache',
-        ], $options);
-        $authWrapper = AuthWrapper::createWithScopes($options['scopes'],$authWrapperOptions);
+        if (isset($options['credentialsLoader'])) {
+            $authHttpHandler = isset($options['authHttpHandler']) ? $options['authHttpHandler'] : null;
+            $this->authWrapper = new AuthWrapper($options['credentialsLoader'], $authHttpHandler);
+        } else {
+            $this->validateNotNull($options, [
+                'scopes'
+            ]);
+            $this->authWrapper = AuthWrapper::build($options['scopes'], $options);
+        }
 
         $transportOptions = $this->subsetArray([
             'transport',
             'restClientConfigPath',
         ], $options);
         $this->transport = TransportFactory::build($options['serviceAddress'], $authWrapper, $transportOptions);
+
+        $descriptors = require($options['descriptorsConfigPath']);
+        $this->descriptors = $descriptors['interfaces'][$this->serviceName];
+
+
+
+        $this->transport = $transport instanceof TransportInterface
+            ? $transport
+            : TransportFactory::build($options);
     }
 
     /**
