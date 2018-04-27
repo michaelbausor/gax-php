@@ -155,22 +155,33 @@ trait GapicClientTrait
      */
     protected function setClientOptions(array $options)
     {
+        $options += [
+            'disableRetries' => false,
+            'auth' => null,
+            'authConfig' => [],
+            'transport' => null,
+            'transportConfig' => [],
+            'gapicVersion' => null,
+            'libName' => null,
+            'libVersion' => null,
+        ];
         $this->validateNotNull($options, [
             'serviceAddress',
             'serviceName',
             'descriptorsConfigPath',
             'clientConfig',
             'disableRetries',
+            'authConfig',
+            'transportConfig',
         ]);
         $this->validate($options, [
             'auth',
-            'authConfig',
             'transport',
-            'transportConfig',
+            'gapicVersion',
+            'libName',
+            'libVersion',
         ]);
 
-        $transport = $options['transport'] ?: self::defaultTransport();
-        $transportConfig = $options['transportConfig'] ?: [];
         $clientConfig = $options['clientConfig'];
         if (is_string($clientConfig)) {
             $clientConfig = json_decode(file_get_contents($clientConfig), true);
@@ -181,25 +192,22 @@ trait GapicClientTrait
             $clientConfig,
             $options['disableRetries']
         );
-        $gapicVersion = isset($options['gapicVersion'])
-            ? $options['gapicVersion']
-            : self::getGapicVersion($options);
         $this->agentHeaderDescriptor = new AgentHeaderDescriptor([
-            'libName' => $this->pluck('libName', $options, false),
-            'libVersion' => $this->pluck('libVersion', $options, false),
-            'gapicVersion' => $gapicVersion,
+            'libName' => $options['libName'],
+            'libVersion' => $options['libVersion'],
+            'gapicVersion' => $options['gapicVersion'] ?: self::getGapicVersion($options),
         ]);
 
         self::validateFileExists($options['descriptorsConfigPath']);
         $descriptors = require($options['descriptorsConfigPath']);
         $this->descriptors = $descriptors['interfaces'][$this->serviceName];
 
-        $authConfig = $options['authConfig'] ?: [];
-        $this->authWrapper = $this->createAuthWrapper($options['auth'], $authConfig);
+        $this->authWrapper = $this->createAuthWrapper($options['auth'], $options['authConfig']);
 
+        $transport = $options['transport'] ?: self::defaultTransport();
         $this->transport = $transport instanceof TransportInterface
             ? $transport
-            : $this->createTransport($options['serviceAddress'], $transport, $transportConfig);
+            : $this->createTransport($options['serviceAddress'], $transport, $options['transportConfig']);
     }
 
     /**
