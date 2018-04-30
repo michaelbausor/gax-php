@@ -79,13 +79,14 @@ trait ClientOptionsTrait
             'auth' => null,
             'authConfig' => [],
             'transport' => null,
-            'transportConfig' => [
-                'grpc' => [],
-                'rest' => [],
-            ],
+            'transportConfig' => [],
             'gapicVersion' => null,
             'libName' => null,
             'libVersion' => null,
+        ];
+        $defaultOptions['transportConfig'] += [
+            'grpc' => [],
+            'rest' => [],
         ];
 
         $options += $defaultOptions;

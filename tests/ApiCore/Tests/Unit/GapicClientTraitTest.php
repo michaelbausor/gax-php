@@ -53,7 +53,7 @@ class GapicClientTraitTest extends TestCase
     public function tearDown()
     {
         // Reset the static gapicVersion field between tests
-        $client = new GapicClientTraitStub();
+        $client = new ClientTraitStub();
         $client->set('gapicVersion', null, true);
     }
 
@@ -86,7 +86,7 @@ class GapicClientTraitTest extends TestCase
                     'authWrapper' => $authWrapper,
                 ])
             );
-        $client = new GapicClientTraitStub();
+        $client = new ClientTraitStub();
         $client->set('agentHeaderDescriptor', $headerDescriptor);
         $client->set('retrySettings', [
             'method' => $this->getMockBuilder(RetrySettings::class)
@@ -120,7 +120,7 @@ class GapicClientTraitTest extends TestCase
              ->method('startUnaryCall')
              ->will($this->returnValue($expectedPromise));
         $authWrapper = AuthWrapper::build([]);
-        $client = new GapicClientTraitStub();
+        $client = new ClientTraitStub();
         $client->set('transport', $transport);
         $client->set('authWrapper', $authWrapper);
         $client->set('agentHeaderDescriptor', $agentHeaderDescriptor);
@@ -142,7 +142,7 @@ class GapicClientTraitTest extends TestCase
         $version = '1.2.3-dev';
         $tmpFile = sys_get_temp_dir() . '/VERSION';
         file_put_contents($tmpFile, $version);
-        $client = new GapicClientTraitStub();
+        $client = new ClientTraitStub();
         $client->set('gapicVersion', $version, true);
         $options = ['versionFile' => $tmpFile];
         $this->assertEquals($version, $client->call('getGapicVersion', [
@@ -153,7 +153,7 @@ class GapicClientTraitTest extends TestCase
     public function testGetGapicVersionWithLibVersion()
     {
         $version = '1.2.3-dev';
-        $client = new GapicClientTraitStub();
+        $client = new ClientTraitStub();
         $client->set('gapicVersion', $version, true);
         $options = ['libVersion' => $version];
         $this->assertEquals($version, $client->call('getGapicVersion', [
@@ -166,7 +166,7 @@ class GapicClientTraitTest extends TestCase
      */
     public function testCreateAuthWrapper($auth, $authConfig, $expectedAuthWrapper)
     {
-        $client = new GapicClientTraitStub();
+        $client = new ClientTraitStub();
         $actualAuthWrapper = $client->call('createAuthWrapper', [
             $auth,
             $authConfig,
@@ -196,7 +196,7 @@ class GapicClientTraitTest extends TestCase
      */
     public function testCreateAuthWrapperValidationException($auth, $authConfig)
     {
-        $client = new GapicClientTraitStub();
+        $client = new ClientTraitStub();
         $client->call('createAuthWrapper', [
             $auth,
             $authConfig,
@@ -217,7 +217,7 @@ class GapicClientTraitTest extends TestCase
      */
     public function testCreateAuthWrapperInvalidArgumentException($auth, $authConfig)
     {
-        $client = new GapicClientTraitStub();
+        $client = new ClientTraitStub();
         $client->call('createAuthWrapper', [
             $auth,
             $authConfig,
@@ -236,7 +236,7 @@ class GapicClientTraitTest extends TestCase
      */
     public function testCreateTransport($serviceAddress, $transport, $transportConfig, $expectedTransportClass)
     {
-        $client = new GapicClientTraitStub();
+        $client = new ClientTraitStub();
         $transport = $client->call('createTransport', [
             $serviceAddress,
             $transport,
@@ -273,7 +273,7 @@ class GapicClientTraitTest extends TestCase
      */
     public function testCreateTransportInvalid($serviceAddress, $transport, $transportConfig)
     {
-        $client = new GapicClientTraitStub();
+        $client = new ClientTraitStub();
         $client->call('createTransport', [
             $serviceAddress,
             $transport,
@@ -302,10 +302,9 @@ class GapicClientTraitTest extends TestCase
      */
     public function testSetClientOptions($options, $expectedProperties)
     {
-        $client = new GapicClientTraitStub();
-        $client->call('setClientOptions', [
-            $options + GapicClientTraitStub::getClientDefaults(),
-        ]);
+        $client = new ClientTraitStub();
+        $updatedOptions = $client->call('buildClientOptions', [$options]);
+        $client->call('setClientOptions', [$updatedOptions]);
         foreach ($expectedProperties as $propertyName => $expectedValue) {
             $actualValue = $client->get($propertyName);
             $this->assertEquals($expectedValue, $actualValue);
@@ -314,7 +313,7 @@ class GapicClientTraitTest extends TestCase
 
     public function setClientOptionsData()
     {
-        $clientDefaults = GapicClientTraitStub::getClientDefaults();
+        $clientDefaults = ClientTraitStub::getClientDefaults();
         $expectedRetrySettings = RetrySettings::load(
             $clientDefaults['serviceName'],
             json_decode(file_get_contents($clientDefaults['clientConfig']), true),
@@ -335,48 +334,5 @@ class GapicClientTraitTest extends TestCase
             [[], $expectedProperties],
             [['disableRetries' => true], ['retrySettings' => $disabledRetrySettings] + $expectedProperties],
         ];
-    }
-}
-
-class GapicClientTraitStub
-{
-    use GapicClientTrait;
-
-    public static function getClientDefaults()
-    {
-        return [
-            'serviceAddress' => 'test.address.com:443',
-            'serviceName' => 'test.interface.v1.api',
-            'clientConfig' => __DIR__ . '/testdata/test_service_client_config.json',
-            'descriptorsConfigPath' => __DIR__.'/testdata/test_service_descriptor_config.php',
-            'disableRetries' => false,
-            'auth' => null,
-            'authConfig' => null,
-            'transport' => null,
-            'transportConfig' => [
-                'rest' => [
-                    'restClientConfigPath' => __DIR__.'/testdata/test_service_rest_client_config.php',
-                ]
-            ],
-        ];
-    }
-
-    public function call($fn, array $args = [])
-    {
-        return call_user_func_array([$this, $fn], $args);
-    }
-
-    public function set($name, $val, $static = false)
-    {
-        if ($static) {
-            $this::$$name = $val;
-        } else {
-            $this->$name = $val;
-        }
-    }
-
-    public function get($name)
-    {
-        return $this->$name;
     }
 }
