@@ -29,7 +29,7 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-namespace Google\ApiCore\Tests\Unit;
+namespace Google\ApiCore\Tests\Unit\ResourceTemplate;
 
 use Google\ApiCore\ResourceTemplate\Segment;
 use PHPUnit\Framework\TestCase;
@@ -102,8 +102,12 @@ class ResourceTemplateTestUtils extends TestCase
     public static function validAbsolutePaths()
     {
         $paths = [];
-        foreach (self::validRelativePaths() as list($path)) {
-            $paths[] = ['/' . $path];
+        foreach (self::validRelativePaths() as $args) {
+            $newArgs = [];
+            foreach ($args as $arg) {
+                $newArgs[] = '/' . $arg;
+            }
+            $paths[] = $newArgs;
         }
         return $paths;
     }
@@ -136,7 +140,7 @@ class ResourceTemplateTestUtils extends TestCase
     {
         $badSyntaxPaths = [];
         foreach (self::syntacticallyInvalidPaths() as list($invalidPath)) {
-            $badSyntaxPaths[] = ['/' . $invalidPath];
+            $badSyntaxPaths[] = ['/' . $invalidPath . ':action'];
         }
         return array_merge($badSyntaxPaths, [
             [null],                     // Null path
@@ -169,7 +173,6 @@ class ResourceTemplateTestUtils extends TestCase
             ["fo\\o"],
         ];
     }
-
 
     public static function validBindings()
     {

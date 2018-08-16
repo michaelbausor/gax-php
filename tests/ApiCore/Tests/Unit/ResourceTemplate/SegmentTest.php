@@ -34,6 +34,8 @@ namespace Google\ApiCore\Tests\Unit;
 use Google\ApiCore\ResourceTemplate\Parser;
 use Google\ApiCore\ResourceTemplate\RelativeResourceTemplate;
 use Google\ApiCore\ResourceTemplate\Segment;
+use Google\ApiCore\Tests\Unit\ResourceTemplate\ResourceTemplateTestUtils;
+use Google\ApiCore\ValidationException;
 use PHPUnit\Framework\TestCase;
 
 class SegmentTest extends TestCase
@@ -58,10 +60,12 @@ class SegmentTest extends TestCase
         foreach (ResourceTemplateTestUtils::validBindings() as list($binding)) {
             $singleWildcardBindings[] = [ResourceTemplateTestUtils::wildcardSegment(), $binding];
         }
+
         $doubleWildcardBindings = [];
         foreach (ResourceTemplateTestUtils::validDoubleWildcardBindings() as list($binding)) {
             $doubleWildcardBindings[] = [ResourceTemplateTestUtils::doubleWildcardSegment(), $binding];
         }
+
         $literalBindings = [];
         foreach (ResourceTemplateTestUtils::validLiterals() as list($literal)) {
             $literalBindings[] = [
@@ -69,7 +73,65 @@ class SegmentTest extends TestCase
                 $literal
             ];
         }
+
+        $nonVariableBindings = array_merge($singleWildcardBindings, $doubleWildcardBindings, $literalBindings);
+
+        // Every non-variable binding should be able to be placed into a variable and
+        // bind to the same value.
+        $variableBindings = [];
+        foreach ($nonVariableBindings as list($segment, $value)) {
+            $variable = ResourceTemplateTestUtils::variableSegment(
+                "mykey",
+                new RelativeResourceTemplate((string) $segment)
+            );
+            $variableBindings[] = [$variable, $value];
+        }
+
+        return array_merge($nonVariableBindings, $variableBindings);
     }
 
+    /**
+     * @dataProvider bindToFailProvider
+     * @param Segment $segment
+     * @param string $value
+     * @expectedException \Google\ApiCore\ValidationException
+     */
+    public function testFailBindTo($segment, $value)
+    {
+        $segment->bindTo($value);
+    }
 
+    public function bindToFailProvider()
+    {
+        $singleWildcardBindings = [];
+        foreach (ResourceTemplateTestUtils::invalidBindings() as list($binding)) {
+            $singleWildcardBindings[] = [ResourceTemplateTestUtils::wildcardSegment(), $binding];
+        }
+
+        $doubleWildcardBindings = [];
+        foreach (ResourceTemplateTestUtils::invalidDoubleWildcardBindings() as list($binding)) {
+            $doubleWildcardBindings[] = [ResourceTemplateTestUtils::doubleWildcardSegment(), $binding];
+        }
+
+        $literalBindings = [
+            [ResourceTemplateTestUtils::literalSegment("value"), "othervalue"],
+            [ResourceTemplateTestUtils::literalSegment("value"), ""],
+            [ResourceTemplateTestUtils::literalSegment("value"), null],
+        ];
+
+        $nonVariableBindings = array_merge($singleWildcardBindings, $doubleWildcardBindings, $literalBindings);
+
+        // Every non-variable binding should be able to be placed into a variable and
+        // fail to bind to the same value.
+        $variableBindings = [];
+        foreach ($nonVariableBindings as list($segment, $value)) {
+            $variable = ResourceTemplateTestUtils::variableSegment(
+                "mykey",
+                new RelativeResourceTemplate((string) $segment)
+            );
+            $variableBindings[] = [$variable, $value];
+        }
+
+        return array_merge($nonVariableBindings, $variableBindings);
+    }
 }

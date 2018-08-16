@@ -32,6 +32,7 @@
 namespace Google\ApiCore\Tests\Unit;
 
 use Google\ApiCore\ResourceTemplate\RelativeResourceTemplate;
+use Google\ApiCore\Tests\Unit\ResourceTemplate\ResourceTemplateTestUtils;
 use PHPUnit\Framework\TestCase;
 
 class RelativeResourceTemplateTest extends TestCase

@@ -34,6 +34,8 @@ namespace Google\ApiCore\Tests\Unit;
 use Google\ApiCore\ResourceTemplate\Parser;
 use Google\ApiCore\ResourceTemplate\RelativeResourceTemplate;
 use Google\ApiCore\ResourceTemplate\Segment;
+use Google\ApiCore\Tests\Unit\ResourceTemplate\ResourceTemplateTestUtils;
+use Google\ApiCore\ValidationException;
 use PHPUnit\Framework\TestCase;
 
 class ParserTest extends TestCase
@@ -92,7 +94,7 @@ class ParserTest extends TestCase
     }
 
     /**
-     * Test parseSegments on invalid input, including all invalid literals.
+     * Test parseSegments on invalid input.
      *
      * @dataProvider invalidPathProvider
      * @expectedException \Google\ApiCore\ValidationException
@@ -105,6 +107,29 @@ class ParserTest extends TestCase
 
     public function invalidPathProvider()
     {
-        return array_merge(ResourceTemplateTestUtils::invalidRelativePaths(), ResourceTemplateTestUtils::invalidLiterals());
+        return ResourceTemplateTestUtils::invalidRelativePaths();
+    }
+
+    /**
+     * Test parseSegments on invalid literals.
+     *
+     * @dataProvider invalidPathProvider
+     * @expectedException \Google\ApiCore\ValidationException
+     * @param string $path
+     */
+    public function testParseInvalidLiterals($path)
+    {
+        $segments = Parser::parseSegments($path);
+        // Mostly we expect a ValidationException during parsing. However, one possible
+        // invalid literal is one containing '/' - in that case, we expect successful
+        // parsing, but into multiple segments, not into a single literal segment.
+        if (count($segments) !== 1) {
+            throw new ValidationException('expected single segment');
+        }
+    }
+
+    public function invalidLiteralProvider()
+    {
+        return ResourceTemplateTestUtils::invalidLiterals();
     }
 }

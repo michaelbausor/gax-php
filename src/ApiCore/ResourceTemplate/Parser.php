@@ -113,7 +113,7 @@ class Parser
                     "Unexpected characters in literal segment $segmentString"
                 );
             }
-            return new Segment(Segment::LITERAL_SEGMENT, null, $segmentString);
+            return new Segment(Segment::LITERAL_SEGMENT, $segmentString);
         }
     }
 
@@ -148,7 +148,7 @@ class Parser
                 "Unexpected characters in variable name $variableKey"
             );
         }
-        return new Segment(Segment::VARIABLE_SEGMENT, $variableKey, null, $nestedResource);
+        return new Segment(Segment::VARIABLE_SEGMENT, null, $variableKey, $nestedResource);
     }
 
     /**

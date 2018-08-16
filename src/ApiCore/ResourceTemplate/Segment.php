@@ -116,7 +116,7 @@ class Segment
     {
         $value = (string) $value;
         if ($this->matches($value)) {
-            return new Segment(Segment::LITERAL_SEGMENT, null, $value);
+            return new Segment(Segment::LITERAL_SEGMENT, $value);
         } else {
             throw new ValidationException(
                 "Cannot bind segment '$this' to value '$value'"
