@@ -38,30 +38,11 @@ use PHPUnit\Framework\TestCase;
 
 class ParserTest extends TestCase
 {
-    private static function literalSegment($value)
-    {
-        return new Segment(Segment::LITERAL_SEGMENT, null, $value);
-    }
-
-    private static function wildcardSegment($value = null)
-    {
-        return new Segment(Segment::WILDCARD_SEGMENT, null, $value);
-    }
-
-    private static function doubleWildcardSegment($value = null)
-    {
-        return new Segment(Segment::DOUBLE_WILDCARD_SEGMENT, null, $value);
-    }
-
-    private static function variableSegment($key, $template, $value = null)
-    {
-        return new Segment(Segment::VARIABLE_SEGMENT, $key, $value, $template);
-    }
-
     /**
      * @dataProvider validPathProvider
      * @param string $path
      * @param Segment[] $expectedSegments
+     * @throws \Google\ApiCore\ValidationException
      */
     public function testParseSegments($path, $expectedSegments)
     {
@@ -71,27 +52,33 @@ class ParserTest extends TestCase
 
     public function validPathProvider()
     {
-        $singlePathTests = [
-            ["foo", [self::literalSegment("foo")]],
-            ["helloazAZ09-.~_what", [self::literalSegment("helloazAZ09-.~_what")]],
-            ["*", [self::wildcardSegment()]],
-            ["**", [self::doubleWildcardSegment()]],
+        $singleLiteralTests = [];
+        foreach (ResourceTemplateTestUtils::validLiterals() as list($validLiteral)) {
+            $singleLiteralTests[] = [$validLiteral, [ResourceTemplateTestUtils::literalSegment($validLiteral)]];
+        }
+
+        $singleWildcardTests = [
+            ["*", [ResourceTemplateTestUtils::wildcardSegment()]],
+            ["**", [ResourceTemplateTestUtils::doubleWildcardSegment()]],
+        ];
+
+        $singleVariableTests = [
             ["{foo}", Parser::parseSegments("{foo=*}")],
-            ["{foo=*}", [self::variableSegment("foo", new RelativeResourceTemplate("*"))]],
-            ["{foo=**}", [self::variableSegment("foo", new RelativeResourceTemplate("**"))]],
+            ["{foo=*}", [ResourceTemplateTestUtils::variableSegment("foo", new RelativeResourceTemplate("*"))]],
+            ["{foo=**}", [ResourceTemplateTestUtils::variableSegment("foo", new RelativeResourceTemplate("**"))]],
         ];
 
         $comboPathPieces = [
-            ["foo", [self::literalSegment("foo")]],
-            ["helloazAZ09-.~_what", [self::literalSegment("helloazAZ09-.~_what")]],
-            ["*", [self::wildcardSegment()]],
-            ["*", [self::wildcardSegment()]],
-            ["**", [self::doubleWildcardSegment()]],
+            ["foo", [ResourceTemplateTestUtils::literalSegment("foo")]],
+            ["helloazAZ09-.~_what", [ResourceTemplateTestUtils::literalSegment("helloazAZ09-.~_what")]],
+            ["*", [ResourceTemplateTestUtils::wildcardSegment()]],
+            ["*", [ResourceTemplateTestUtils::wildcardSegment()]],
+            ["**", [ResourceTemplateTestUtils::doubleWildcardSegment()]],
         ];
 
         // Combine the pieces in $comboPathPieces in every possible order
         $comboPathTests = [];
-        foreach (self::yieldAllSequences($comboPathPieces) as $comboSequence) {
+        foreach (ResourceTemplateTestUtils::yieldAllSequences($comboPathPieces) as $comboSequence) {
             $pathPieces = [];
             $segments = [];
             foreach ($comboSequence as list($path, $segmentArray)) {
@@ -101,65 +88,12 @@ class ParserTest extends TestCase
             $comboPathTests[] = [implode('/', $pathPieces), $segments];
         }
 
-        return $singlePathTests + $comboPathTests;
+        return array_merge($singleLiteralTests, $singleWildcardTests, $singleVariableTests, $comboPathTests);
     }
 
     /**
-     * @dataProvider sequenceProvider
-     * @param $sequence
-     * @param $expectedSequences
-     */
-    public function testYieldAllSequences($sequence, $expectedSequences)
-    {
-        $actual = iterator_to_array(self::yieldAllSequences($sequence));
-        $this->assertEquals($expectedSequences, $actual);
-    }
-
-    public function sequenceProvider()
-    {
-        return [
-            [['a'], [['a']]],
-            [['a', 'b'], [
-                ['a'],
-                ['a', 'b'],
-                ['b'],
-                ['b', 'a'],
-            ]],
-            [['a', 'b', 'c'], [
-                ['a'],
-                ['a', 'b'],
-                ['a', 'b', 'c'],
-                ['a', 'c'],
-                ['a', 'c', 'b'],
-                ['b'],
-                ['b', 'a'],
-                ['b', 'a', 'c'],
-                ['b', 'c'],
-                ['b', 'c', 'a'],
-                ['c'],
-                ['c', 'a'],
-                ['c', 'a', 'b'],
-                ['c', 'b'],
-                ['c', 'b', 'a'],
-            ]],
-        ];
-    }
-
-    private static function yieldAllSequences($items)
-    {
-        $keys = array_keys($items);
-        foreach ($keys as $key) {
-            $itemsCopy = $items;
-            $value = $itemsCopy[$key];
-            yield [$value];
-            unset($itemsCopy[$key]);
-            foreach (self::yieldAllSequences($itemsCopy) as $subsequence) {
-                yield array_merge([$value], $subsequence);
-            }
-        }
-    }
-
-    /**
+     * Test parseSegments on invalid input, including all invalid literals.
+     *
      * @dataProvider invalidPathProvider
      * @expectedException \Google\ApiCore\ValidationException
      * @param string $path
@@ -171,150 +105,6 @@ class ParserTest extends TestCase
 
     public function invalidPathProvider()
     {
-        return [
-            [null],                     // Null path
-            [""],                       // Empty path
-            ["/foo"],                   // Leading '/'
-            ["foo:bar"],                // Contains ':'
-            ["foo{barbaz"],             // Contains '{'
-            ["foo}barbaz"],             // Contains '}'
-            ["foo{bar}baz"],            // Contains '{' and '}'
-            ["{}"],                     // Empty var
-            ["{foo#bar}"],              // Invalid var
-            ["{foo.bar=baz"],           // Unbalanced '{'
-            ["{foo.bar=baz=fizz}"],     // Multiple '=' in variable
-            ["{foo.bar=**/**}"],        // Invalid resource template
-        ];
-    }
-
-    /**
-     * @param string $literal
-     * @dataProvider validLiterals
-     */
-    public function testIsValidLiteral($literal)
-    {
-        $this->assertTrue(Parser::isValidLiteral($literal));
-    }
-
-    public function validLiterals()
-    {
-        return [
-            ["foo"],
-            ["helloazAZ09-.~_what"],
-            ["5"],
-            ["5five"],
-        ];
-    }
-
-    /**
-     * @param string $literal
-     * @dataProvider invalidLiterals
-     */
-    public function testFailIsValidLiteral($literal)
-    {
-        $this->assertFalse(Parser::isValidLiteral($literal));
-    }
-
-    public function invalidLiterals()
-    {
-        return [
-            [null],
-            [""],
-            ["fo\$o"],
-            ["fo{o"],
-            ["fo}o"],
-            ["fo/o"],
-            ["fo#o"],
-            ["fo%o"],
-            ["fo\\o"],
-        ];
-    }
-
-    /**
-     * @param string $binding
-     * @dataProvider validBindings
-     */
-    public function testIsValidBinding($binding)
-    {
-        $this->assertTrue(Parser::isValidBinding($binding));
-    }
-
-    public function validBindings()
-    {
-        return array_merge(
-            $this->validLiterals(),
-            [
-                ["fo#o"],
-                ["fo%o"],
-                ["fo!o"],
-                ["fo@o"],
-                ["fo#o"],
-                ["fo\$o"],
-                ["fo%o"],
-                ["fo^o"],
-                ["fo&o"],
-                ["fo*o"],
-                ["fo(o"],
-                ["fo)o"],
-                ["fo{o"],
-                ["fo}o"],
-                ["fo+o"],
-                ["fo=o"],
-            ]
-        );
-    }
-
-    /**
-     * @param string $binding
-     * @dataProvider invalidBindings
-     */
-    public function testFailIsValidBinding($binding)
-    {
-        $this->assertFalse(Parser::isValidBinding($binding));
-    }
-
-    public function invalidBindings()
-    {
-        return [
-            [null],
-            [""],
-            ["fo/o"],
-        ];
-    }
-
-    /**
-     * @param string $binding
-     * @dataProvider validDoubleWildcardBindings
-     */
-    public function testIsValidDoubleWildcardBinding($binding)
-    {
-        $this->assertTrue(Parser::isValidDoubleWildcardBinding($binding));
-    }
-
-    public function validDoubleWildcardBindings()
-    {
-        return array_merge(
-            $this->validBindings(),
-            [
-                ["fo/o"]
-            ]
-        );
-    }
-
-    /**
-     * @param string $binding
-     * @dataProvider invalidDoubleWildcardBindings
-     */
-    public function testFailIsValidDoubleWildcardBinding($binding)
-    {
-        $this->assertFalse(Parser::isValidDoubleWildcardBinding($binding));
-    }
-
-    public function invalidDoubleWildcardBindings()
-    {
-        return [
-            [null],
-            [""],
-        ];
+        return array_merge(ResourceTemplateTestUtils::invalidRelativePaths(), ResourceTemplateTestUtils::invalidLiterals());
     }
 }

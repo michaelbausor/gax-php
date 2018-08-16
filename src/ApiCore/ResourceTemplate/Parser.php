@@ -42,8 +42,9 @@ class Parser
     /**
      * Parses a path into an array of segments.
      *
-     * @param $path
+     * @param string $path
      * @return array
+     * @throws ValidationException
      */
     public static function parseSegments($path)
     {
@@ -95,12 +96,17 @@ class Parser
         }
     }
 
+    /**
+     * @param string $segmentString
+     * @return Segment
+     * @throws ValidationException
+     */
     private static function parse($segmentString)
     {
         if ($segmentString === '*') {
-            return new Segment(Segment::WILDCARD_SEGMENT, null, null);
+            return new Segment(Segment::WILDCARD_SEGMENT);
         } elseif ($segmentString === '**') {
-            return new Segment(Segment::DOUBLE_WILDCARD_SEGMENT, null, null);
+            return new Segment(Segment::DOUBLE_WILDCARD_SEGMENT);
         } else {
             if (!self::isValidLiteral($segmentString)) {
                 throw new ValidationException(
@@ -111,6 +117,11 @@ class Parser
         }
     }
 
+    /**
+     * @param string $segmentStringWithoutBraces
+     * @return Segment
+     * @throws ValidationException
+     */
     private static function parseVariableSegment($segmentStringWithoutBraces)
     {
         // Validate there are no nested braces
@@ -149,14 +160,15 @@ class Parser
      */
     private static function parseLiteralFromPath($literal, $path, &$index)
     {
-        if (strlen($path) < ($index + strlen($literal))) {
+        $literalLength = strlen($literal);
+        if (strlen($path) < ($index + $literalLength)) {
             throw self::parseError($literal, $path, $index);
         }
-        $consumedLiteral = substr($path, $index, strlen($literal));
+        $consumedLiteral = substr($path, $index, $literalLength);
         if ($consumedLiteral !== $literal) {
             throw self::parseError($literal, $path, $index);
         }
-        $index += strlen($literal);
+        $index += $literalLength;
         return $consumedLiteral;
     }
 
@@ -175,32 +187,8 @@ class Parser
      * @param string $literal
      * @return bool
      */
-    public static function isValidLiteral($literal)
+    private static function isValidLiteral($literal)
     {
         return preg_match("/^[0-9a-zA-Z\\.\\-~_]+$/", $literal) === 1;
-    }
-
-    /**
-     * Check if $binding is a valid segment binding. Segment bindings may contain any characters
-     * except a forward slash ('/'), and may not be empty.
-     *
-     * @param $binding
-     * @return bool
-     */
-    public static function isValidBinding($binding)
-    {
-        return preg_match("-^[^/]+$-", $binding) === 1;
-    }
-
-    /**
-     * Check if $binding is a valid double wildcard binding. Segment bindings may contain any
-     * characters, but may not be empty.
-     *
-     * @param $binding
-     * @return bool
-     */
-    public static function isValidDoubleWildcardBinding($binding)
-    {
-        return preg_match("-^.+$-", $binding) === 1;
     }
 }

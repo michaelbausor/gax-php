@@ -49,23 +49,7 @@ class AbsoluteResourceTemplateTest extends TestCase
 
     public function validPathProvider()
     {
-        return [
-            ["/foo"],
-            ["/*"],
-            ["/**"],
-            ["/{foo}", "/{foo=*}"],
-            ["/{foo=*}"],
-            ["/{foo=**}"],
-            ["/foo/*"],
-            ["/*/foo"],
-            ["/foo/*:bar"],
-            ["/*/foo:bar"],
-            ["/*/*/*/*:foo"],
-            ["/**/*/*:foo"],
-            ["/foo/**/bar/*"],
-            ["/foo/*/bar/**"],
-            ["/foo/helloazAZ09-.~_what"],
-        ];
+        return ResourceTemplateTestUtils::validAbsolutePaths();
     }
 
     /**
@@ -80,23 +64,7 @@ class AbsoluteResourceTemplateTest extends TestCase
 
     public function invalidPathProvider()
     {
-        return [
-            [null],                     // Null path
-            [""],                       // Empty path
-            ["foo"],                    // No leading '/'
-            ["/foo:bar/baz"],           // Action containing '/'
-            ["/foo:bar:baz"],           // Multiple ':'
-            ["/foo/bar*baz"],           // Mixed literal and '*'
-            ["/foo/**/**"],             // Multiple '**'
-            ["/foo/**/{var=**}"],       // Multiple '**' nested
-            ["/foo/{bizz=**}/{var=**}"],// Multiple '**' nested
-            ["/foo/{bizz=**/**}"],      // Multiple '**' nested
-            ["/foo/{bar={baz}}"],       // Nested {}
-            ["/foo/{bar=fizz=buzz}"],   // Multiple '=' in variable
-            ["/foo/{bar"],              // Unmatched '{'
-            ["/foo/{bar}/{bar}"],       // Duplicate variable key
-            ["/foo/{bar/baz}"],         // Variable containing '/'
-        ];
+        return ResourceTemplateTestUtils::invalidAbsolutePaths();
     }
 
     /**
