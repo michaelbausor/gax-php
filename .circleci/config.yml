@@ -11,7 +11,7 @@ commands:
     steps:
       - run:
           name: Install pecl extension
-          command: "pecl install << parameters.ext >><<# parameters.version >>-<< parameters.version >><</ parameters.version>>"
+          command: "sudo pecl install << parameters.ext >><<# parameters.version >>-<< parameters.version >><</ parameters.version>>"
       - run:
           name: Enable extension
           command: "sudo docker-php-ext-enable << parameters.ext >>"
