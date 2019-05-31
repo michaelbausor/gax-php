@@ -1,0 +1,108 @@
+version: 2.1
+commands:
+  install_pecl_ext:
+    description: "Install pecl extension"
+    parameters:
+      ext:
+        type: string
+      version:
+        type: string
+        default: ""
+    steps:
+      - run:
+          name: Install pecl extension
+          command: "pecl install << parameters.ext >><<# parameters.version >>-<< parameters.version >><</ parameters.version>>"
+      - run:
+          name: Enable extension
+          command: "sudo docker-php-ext-enable << parameters.ext >>"
+  install_grpc_ext:
+    description: "Install grpc extension"
+    steps:
+      - install_pecl_ext:
+          ext: "grpc"
+  install_protobuf_ext:
+    description: "Install protobuf extension"
+    steps:
+      - install_pecl_ext:
+          ext: "protobuf"
+  checkout_and_install:
+    description: "Checkout and install gax-php with composer"
+    steps:
+      - checkout
+      - run:
+          name: Composer install
+          command: "composer install"
+
+  default_install:
+    description: "Default checkout and install"
+    parameters:
+      use-grpc-ext:
+        type: boolean
+        default: true
+      use-protobuf-ext:
+        type: boolean
+        default: false
+    steps:
+      - when:
+          condition: << parameters.use-grpc-ext >>
+          steps:
+            - install_grpc_ext
+      - when:
+          condition: << parameters.use-protobuf-ext >>
+          steps:
+            - install_protobuf_ext
+      - checkout_and_install
+  test:
+    description: "Run gax-php tests"
+    steps:
+      - run:
+          name: Run phpunit tests
+          command: "vendor/bin/phpunit --coverage-clover=coverage.xml"
+      - run:
+          name: Run phpcs
+          command: "vendor/bin/phpcs -s --standard=./ruleset.xml"
+jobs:
+  php_5_5:
+    docker:
+      - image: circleci/php:5.5
+    steps:
+      - default_install
+      - test
+  php_5_6:
+    docker:
+      - image: circleci/php:5.6
+    steps:
+      - default_install
+      - test
+  php_5_6_protobuf_ext:
+    docker:
+      - image: circleci/php:5.6
+    steps:
+      - default_install:
+          use-protobuf-ext: true
+      - test
+  php_7_0:
+    docker:
+      - image: circleci/php:7.0
+    steps:
+      - default_install
+      - test
+  php_7_1:
+    docker:
+      - image: circleci/php:7.1
+    steps:
+      - default_install
+      - test
+  php_7_2:
+    docker:
+      - image: circleci/php:7.2
+    steps:
+      - default_install
+      - test
+  php_7_2_protobuf_ext:
+    docker:
+      - image: circleci/php:7.2
+    steps:
+      - default_install:
+          use-protobuf-ext: true
+      - test
