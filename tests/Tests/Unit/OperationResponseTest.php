@@ -198,14 +198,9 @@ class OperationResponseTest extends TestCase
 
     private function createOperationClient($reloadCount)
     {
-        $opClient = $this->getMock(
-            OperationsClient::class,
-            ['getOperation'],
-            [[
-                'serviceAddress' => '',
-                'scopes' => [],
-            ]]
-        );
+        $opClient = $this->getMockBuilder(OperationsClient::class)
+            ->disableOriginalConstructor()
+            ->getMock();
         for ($i = 0; $i < $reloadCount - 1; $i++) {
             $opClient->expects($this->at($i))
                 ->method('getOperation')

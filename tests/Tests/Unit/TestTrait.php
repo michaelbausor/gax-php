@@ -36,6 +36,7 @@ use Google\ApiCore\Testing\MockResponse;
 use Google\ApiCore\Testing\MockRequest;
 use Google\ApiCore\Testing\MockStatus;
 use Google\ApiCore\LongRunning\OperationsClient;
+use Google\Auth\ApplicationDefaultCredentials;
 use Google\Protobuf\Any;
 use Google\Rpc\Code;
 use Google\Rpc\Status;
@@ -139,6 +140,15 @@ trait TestTrait
         }
         if (defined('HHVM_VERSION')) {
             self::markTestSkipped('gRPC is not supported on HHVM.');
+        }
+    }
+
+    public static function requiresApplicationDefaultCredentials()
+    {
+        try {
+            ApplicationDefaultCredentials::getCredentials();
+        } catch (\DomainException $ex) {
+            self::markTestSkipped('Must have ApplicationDefaultCredentials available to run this test.');
         }
     }
 }

@@ -51,7 +51,7 @@ class RetryMiddlewareTest extends TestCase
      */
     public function testRetryNoRetryableCode()
     {
-        $call = $this->getMock(Call::class, [], [], '', false);
+        $call = $this->getMockBuilder(Call::class)->disableOriginalConstructor()->getMock();
         $retrySettings = RetrySettings::constructDefault()
             ->with([
                 'retriesEnabled' => false,
@@ -72,7 +72,7 @@ class RetryMiddlewareTest extends TestCase
 
     public function testRetryBackoff()
     {
-        $call = $this->getMock(Call::class, [], [], '', false);
+        $call = $this->getMockBuilder(Call::class)->disableOriginalConstructor()->getMock();
         $retrySettings = RetrySettings::constructDefault()
             ->with([
                 'retriesEnabled' => true,
@@ -104,7 +104,7 @@ class RetryMiddlewareTest extends TestCase
      */
     public function testRetryTimeoutExceedsMaxTimeout()
     {
-        $call = $this->getMock(Call::class, [], [], '', false);
+        $call = $this->getMockBuilder(Call::class)->disableOriginalConstructor()->getMock();
         $retrySettings = RetrySettings::constructDefault()
             ->with([
                 'retriesEnabled' => true,
@@ -129,7 +129,7 @@ class RetryMiddlewareTest extends TestCase
      */
     public function testRetryTimeoutExceedsRealTime()
     {
-        $call = $this->getMock(Call::class, [], [], '', false);
+        $call = $this->getMockBuilder(Call::class)->disableOriginalConstructor()->getMock();
         $retrySettings = RetrySettings::constructDefault()
             ->with([
                 'retriesEnabled' => true,
@@ -160,7 +160,7 @@ class RetryMiddlewareTest extends TestCase
         $handler = function (Call $call, array $options) use (&$handlerCalled, $timeout) {
             $handlerCalled = true;
             $this->assertEquals($timeout, $options['timeoutMillis']);
-            return $this->getMock(Promise::class);
+            return $this->getMockBuilder(Promise::class)->getMock();
         };
         $retrySettings = RetrySettings::constructDefault()
             ->with([
@@ -169,7 +169,7 @@ class RetryMiddlewareTest extends TestCase
             ]);
         $middleware = new RetryMiddleware($handler, $retrySettings);
 
-        $call = $this->getMock(Call::class, [], [], '', false);
+        $call = $this->getMockBuilder(Call::class)->disableOriginalConstructor()->getMock();
         $options = ['timeoutMillis' => $timeout];
         $middleware($call, $options);
         $this->assertTrue($handlerCalled);

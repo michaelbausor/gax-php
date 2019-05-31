@@ -46,8 +46,10 @@ use Prophecy\Argument;
 
 class CredentialsWrapperTest extends TestCase
 {
+    use TestTrait;
+
     /**
-     * @dataProvider buildData
+     * @dataProvider buildDataWithKeyFile
      */
     public function testBuild($args, $expectedCredentialsWrapper)
     {
@@ -55,13 +57,18 @@ class CredentialsWrapperTest extends TestCase
         $this->assertEquals($expectedCredentialsWrapper, $actualCredentialsWrapper);
     }
 
-    public function buildData()
+    /**
+     * @dataProvider buildDataWithoutKeyFile
+     */
+    public function testBuildWithApplicationDefaultCredentials($args, $expectedCredentialsWrapper)
     {
-        return $this->buildDataWithoutKeyFile() + $this->buildDataWithKeyFile();
+        $actualCredentialsWrapper = CredentialsWrapper::build($args);
+        $this->assertEquals($expectedCredentialsWrapper, $actualCredentialsWrapper);
     }
 
-    private function buildDataWithoutKeyFile()
+    public function buildDataWithoutKeyFile()
     {
+        $this->requiresApplicationDefaultCredentials();
         $scopes = ['myscope'];
         $defaultAuthHttpHandler = HttpHandlerFactory::build();
         $authHttpHandler = HttpHandlerFactory::build();
@@ -99,7 +106,7 @@ class CredentialsWrapperTest extends TestCase
         ];
     }
 
-    private function buildDataWithKeyFile()
+    public function buildDataWithKeyFile()
     {
         $keyFilePath = __DIR__ . '/testdata/json-key-file.json';
         $keyFile = json_decode(file_get_contents($keyFilePath), true);

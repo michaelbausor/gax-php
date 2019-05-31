@@ -88,8 +88,8 @@ class GapicClientTraitTest extends TestCase
             'x-goog-api-client' => ['gl-php/5.5.0 gccl/0.0.0 gapic/0.9.0 gax/1.0.0 grpc/1.0.1'],
             'new-header' => ['this-should-be-used'],
         ];
-        $transport = $this->getMock(TransportInterface::class);
-        $credentialsWrapper = CredentialsWrapper::build([]);
+        $transport = $this->getMockBuilder(TransportInterface::class)->getMock();
+        $credentialsWrapper = $this->getMockBuilder(CredentialsWrapper::class)->disableOriginalConstructor()->getMock();
         $transport->expects($this->once())
             ->method('startUnaryCall')
             ->with(
@@ -134,11 +134,11 @@ class GapicClientTraitTest extends TestCase
             ]
         ];
         $expectedPromise = new FulfilledPromise(new Operation());
-        $transport = $this->getMock(TransportInterface::class);
+        $transport = $this->getMockBuilder(TransportInterface::class)->getMock();
         $transport->expects($this->once())
              ->method('startUnaryCall')
              ->will($this->returnValue($expectedPromise));
-        $credentialsWrapper = CredentialsWrapper::build([]);
+        $credentialsWrapper = $this->getMockBuilder(CredentialsWrapper::class)->disableOriginalConstructor()->getMock();
         $client = new GapicClientTraitStub();
         $client->set('transport', $transport);
         $client->set('credentialsWrapper', $credentialsWrapper);
@@ -211,12 +211,24 @@ class GapicClientTraitTest extends TestCase
         $fetcher = $this->prophesize(FetchAuthTokenInterface::class)->reveal();
         $credentialsWrapper = new CredentialsWrapper($fetcher);
         return [
-            [null, [], CredentialsWrapper::build()],
             [$keyFilePath, [], CredentialsWrapper::build(['keyFile' => $keyFile])],
             [$keyFile, [], CredentialsWrapper::build(['keyFile' => $keyFile])],
             [$fetcher, [], new CredentialsWrapper($fetcher)],
             [$credentialsWrapper, [], $credentialsWrapper],
         ];
+    }
+
+    public function testCreateCredentialsWrapperFromApplicationDefaultCredentials()
+    {
+        $this->requiresApplicationDefaultCredentials();
+        $expectedCredentialsWrapper = CredentialsWrapper::build();
+        $client = new GapicClientTraitStub();
+        $actualCredentialsWrapper = $client->call('createCredentialsWrapper', [
+            null,
+            [],
+        ]);
+
+        $this->assertEquals($expectedCredentialsWrapper, $actualCredentialsWrapper);
     }
 
     /**
@@ -335,6 +347,7 @@ class GapicClientTraitTest extends TestCase
      */
     public function testSetClientOptions($options, $expectedProperties)
     {
+        $this->requiresApplicationDefaultCredentials();
         $client = new GapicClientTraitStub();
         $updatedOptions = $client->call('buildClientOptions', [$options]);
         $client->call('setClientOptions', [$updatedOptions]);
@@ -482,8 +495,8 @@ class GapicClientTraitTest extends TestCase
                 'resourcesGetMethod' => 'getResources',
             ],
         ];
-        $transport = $this->getMock(TransportInterface::class);
-        $credentialsWrapper = CredentialsWrapper::build([]);
+        $transport = $this->getMockBuilder(TransportInterface::class)->getMock();
+        $credentialsWrapper = $this->getMockBuilder(CredentialsWrapper::class)->disableOriginalConstructor()->getMock();
         $client = new GapicClientTraitStubExtension();
         $client->set('transport', $transport);
         $client->set('credentialsWrapper', $credentialsWrapper);
@@ -515,7 +528,7 @@ class GapicClientTraitTest extends TestCase
                         'custom' => ['addModifyUnaryCallableOption' => true]
                     ],
                     'headers' => AgentHeader::buildAgentHeader([]),
-                    'credentialsWrapper' => CredentialsWrapper::build([])
+                    'credentialsWrapper' => $this->getMockBuilder(CredentialsWrapper::class)->disableOriginalConstructor()->getMock(),
                 ])
             )
             ->willReturn(new FulfilledPromise(new Operation()));
@@ -539,7 +552,7 @@ class GapicClientTraitTest extends TestCase
                         'custom' => ['addModifyUnaryCallableOption' => true]
                     ],
                     'headers' => AgentHeader::buildAgentHeader([]),
-                    'credentialsWrapper' => CredentialsWrapper::build([])
+                    'credentialsWrapper' => $this->getMockBuilder(CredentialsWrapper::class)->disableOriginalConstructor()->getMock()
                 ])
             )
             ->willReturn(new FulfilledPromise(new Operation()));
@@ -566,7 +579,7 @@ class GapicClientTraitTest extends TestCase
                         'custom' => ['addModifyUnaryCallableOption' => true]
                     ],
                     'headers' => AgentHeader::buildAgentHeader([]),
-                    'credentialsWrapper' => CredentialsWrapper::build([])
+                    'credentialsWrapper' => $this->getMockBuilder(CredentialsWrapper::class)->disableOriginalConstructor()->getMock()
                 ])
             )
             ->willReturn(new FulfilledPromise(new Operation()));
@@ -593,7 +606,7 @@ class GapicClientTraitTest extends TestCase
                         'custom' => ['addModifyStreamingCallable' => true]
                     ],
                     'headers' => AgentHeader::buildAgentHeader([]),
-                    'credentialsWrapper' => CredentialsWrapper::build([])
+                    'credentialsWrapper' => $this->getMockBuilder(CredentialsWrapper::class)->disableOriginalConstructor()->getMock()
                 ])
             )
             ->willReturn($expectedResponse);
@@ -647,7 +660,7 @@ class GapicClientTraitTest extends TestCase
 
     public function testGetTransport()
     {
-        $transport = $this->getMock(TransportInterface::class);
+        $transport = $this->getMockBuilder(TransportInterface::class)->getMock();
         $client = new GapicClientTraitStub();
         $client->set('transport', $transport);
         $this->assertEquals($transport, $client->call('getTransport'));
