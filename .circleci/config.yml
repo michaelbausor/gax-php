@@ -3,11 +3,12 @@ commands:
   install_bcmath_ext:
     description: "Install bcmath extension"
     parameters:
-      php_version: string
+      php-version:
+        type: string
     steps:
       - run:
           name: Install bcmath package
-          command: "sudo apt-get install php<< parameter.php_version >>-bcmath"
+          command: "sudo apt-get install php<< parameters.php-version >>-bcmath"
   install_pecl_ext:
     description: "Install pecl extension"
     parameters:
@@ -107,7 +108,7 @@ jobs:
     steps:
       - default_install
       - install_bcmath_ext:
-          php_version: "7.2"
+          php-version: "7.2"
       - test
   php_7_2_protobuf_ext:
     docker:
