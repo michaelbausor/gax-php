@@ -95,7 +95,7 @@ jobs:
       - test
   php_7_2:
     docker:
-      - image: circleci/php:7.2
+      - image: circleci/php:7.2-cli
     steps:
       - default_install
       - test
