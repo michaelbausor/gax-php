@@ -106,7 +106,7 @@ jobs:
       - image: circleci/php:7.2-cli
     steps:
       - default_install
-      - install_bcmath_ext
+      - install_bcmath_ext:
           php_version: "7.2"
       - test
   php_7_2_protobuf_ext:
