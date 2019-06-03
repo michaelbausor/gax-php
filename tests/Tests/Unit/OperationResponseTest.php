@@ -193,10 +193,10 @@ class OperationResponseTest extends TestCase
     private function createOperationResponse($options, $reloadCount)
     {
         $opName = 'operations/opname';
-        return new FakeOperationResponse($opName, $this->createOperationClient($reloadCount), $options);
+        return new FakeOperationResponse($opName, $this->createMockOperationsClient($reloadCount), $options);
     }
 
-    private function createOperationClient($reloadCount)
+    private function createMockOperationsClient($reloadCount)
     {
         $opClient = $this->getMockBuilder(OperationsClient::class)
             ->disableOriginalConstructor()

@@ -32,6 +32,7 @@
 namespace Google\ApiCore\Tests\Unit;
 
 use Grpc\UnaryCall;
+use Google\ApiCore\CredentialsWrapper;
 use Google\ApiCore\Testing\MockResponse;
 use Google\ApiCore\Testing\MockRequest;
 use Google\ApiCore\Testing\MockStatus;
@@ -104,6 +105,9 @@ trait TestTrait
             'serviceAddress' => '',
             'scopes' => [],
             'transport' => $transport,
+            'credentials' => $this->getMockBuilder(CredentialsWrapper::class)
+                ->disableOriginalConstructor()
+                ->getMock(),
         ]);
 
         return $client;
